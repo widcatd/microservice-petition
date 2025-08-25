@@ -1,4 +1,4 @@
-package com.petition.usecase.petition.exception;
+package com.petition.model.exception;
 
 import lombok.Getter;
 

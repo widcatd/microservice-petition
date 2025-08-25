@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
@@ -31,10 +32,10 @@ public class RouterRest {
                     operation = @Operation(
                             operationId = "savePetition",
                             summary = "Crear una solicitud",
-                            tags = { "Solicitud" },
-                            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            tags = { "Solicitudes" },
+                            requestBody = @RequestBody(
                                     required = true,
-                                    description = "Datos de creación del usuario",
+                                    description = "Datos de creación de la solicitud",
                                     content = @Content(
                                             schema = @Schema(implementation = CreatePetitionDto.class)
                                     )
@@ -42,7 +43,7 @@ public class RouterRest {
                             responses = {
                                     @ApiResponse(
                                             responseCode = "200",
-                                            description = "Usuario creado correctamente",
+                                            description = "Solicitud creada correctamente",
                                             content = @Content(
                                                     schema = @Schema(implementation = CreatePetitionDto.class)
                                             )

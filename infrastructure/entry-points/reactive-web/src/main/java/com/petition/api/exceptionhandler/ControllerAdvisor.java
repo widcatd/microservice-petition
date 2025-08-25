@@ -1,7 +1,8 @@
 package com.petition.api.exceptionhandler;
 
 import com.petition.api.exception.IdentityDocumentNotFoundException;
-import com.petition.usecase.petition.exception.DataAlreadyExistException;
+import com.petition.model.exception.DataAlreadyExistException;
+import com.petition.model.exception.RegisterNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,17 @@ public class ControllerAdvisor {
                 .bodyValue(errorResponse);
     }
     public Mono<ServerResponse> handleDataAlreadyExistsException(IdentityDocumentNotFoundException ex, ServerRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getCode(),
+                ex.getMessage(),
+                request.path()
+        );
+        return ServerResponse.status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(errorResponse);
+    }
+    public Mono<ServerResponse> handleDataAlreadyExistsException(RegisterNotFoundException ex, ServerRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND,
                 ex.getCode(),

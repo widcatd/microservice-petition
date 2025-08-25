@@ -12,7 +12,7 @@ public enum ExceptionResponse {
     DATA_ALREADY_EXISTS("ERR-004","The program with ID %d already has an assigned user"),
     ID_USER_NOT_FOUND("ERR-006","ID_USER %d not found"),
     ID_USER_ALREADY_EXISTS("ERR-007", "The program already has an assigned ID_USER %d"),
-    IDENTITY_DOCUMENT_NOT_FOUND("ERR-008", "No existe un usuario con el documento %d");
+    IDENTITY_DOCUMENT_NOT_FOUND("ERR-008", "No existe un usuario con el documento %s");
     private final String code;
     private final String message;
 }
