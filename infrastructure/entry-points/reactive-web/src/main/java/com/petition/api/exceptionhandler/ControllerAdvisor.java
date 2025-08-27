@@ -2,6 +2,7 @@ package com.petition.api.exceptionhandler;
 
 import com.petition.api.exception.IdentityDocumentNotFoundException;
 import com.petition.model.exception.DataAlreadyExistException;
+import com.petition.model.exception.PetitionValidationException;
 import com.petition.model.exception.RegisterNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -63,6 +64,17 @@ public class ControllerAdvisor {
                 request.path()
         );
         return ServerResponse.status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(errorResponse);
+    }
+    public Mono<ServerResponse> handleDataAlreadyExistsException(PetitionValidationException ex, ServerRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getCode(),
+                ex.getMessage(),
+                request.path()
+        );
+        return ServerResponse.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(errorResponse);
     }

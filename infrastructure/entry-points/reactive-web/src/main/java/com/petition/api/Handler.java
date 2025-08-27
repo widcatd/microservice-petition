@@ -1,14 +1,15 @@
 package com.petition.api;
 
-import com.petition.api.dto.CreatePetitionDto;
 import com.petition.api.exception.IdentityDocumentNotFoundException;
 import com.petition.api.exception.ValidatorHandler;
 import com.petition.api.exceptionhandler.ControllerAdvisor;
 import com.petition.api.exceptionhandler.ExceptionResponse;
 import com.petition.api.helper.IPetitionRequestMapper;
 import com.petition.api.webclient.IAuthenticationClient;
-import com.petition.api.webclient.dto.UserDto;
+import com.petition.model.exception.PetitionValidationException;
+import com.petition.usecase.petition.validation.PetitionValidatorUseCase;
 import com.petition.model.exception.RegisterNotFoundException;
+import com.petition.model.petition.Petition;
 import com.petition.usecase.petition.PetitionUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,8 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
+
 @Component
 @RequiredArgsConstructor
 @Tag(name = "Solicitudes", description = "Operaciones sobre solicitudes")
@@ -28,6 +31,7 @@ public class Handler {
     private final IPetitionRequestMapper petitionRequestMapper;
     private final IAuthenticationClient authenticationClient;
     private final ControllerAdvisor controllerAdvisor;
+    private final PetitionValidatorUseCase petitionValidatorUseCase;
 
     public Mono<ServerResponse> listenGETUseCase(ServerRequest serverRequest) {
         // useCase.logic();
@@ -45,24 +49,27 @@ public class Handler {
     }
     @Operation(summary = "Crear una solicitud")
     public Mono<ServerResponse> savePetition(ServerRequest serverRequest) {
-        return serverRequest.bodyToMono(CreatePetitionDto.class)
-                .map(validatorHandler::validate)
-                .flatMap(petitionDto ->
-                        authenticationClient.findByDocument(petitionDto.getIdentityDocument())
+        return serverRequest.bodyToMono(Petition.class)
+                .flatMap(petitionValidatorUseCase::validate)
+                .flatMap(petition ->
+                        authenticationClient.findByDocument(petition.getIdentityDocument())
                                 .switchIfEmpty(Mono.error(new IdentityDocumentNotFoundException( ExceptionResponse.IDENTITY_DOCUMENT_NOT_FOUND.getCode(),
-                                        String.format(ExceptionResponse.IDENTITY_DOCUMENT_NOT_FOUND.getMessage(), petitionDto.getIdentityDocument()))))
+                                        String.format(ExceptionResponse.IDENTITY_DOCUMENT_NOT_FOUND.getMessage(), petition.getIdentityDocument()))))
                                 .map(userDto ->{
-                                    petitionDto.setEmail(userDto.getEmail());
-                                    return petitionRequestMapper.toModel(petitionDto);
+                                    petition.setEmail(userDto.getEmail());
+                                    return petition;
                                 })
                 )
                 .flatMap(petitionUseCase::savePetition)
-                .then(ServerResponse.ok()
+                .then(Mono.defer(() -> ServerResponse.created(URI.create("/api/v1/solicitud/"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(""))
+                        .build()))
                 .onErrorResume(RegisterNotFoundException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
                 .onErrorResume(IdentityDocumentNotFoundException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
+                .onErrorResume(PetitionValidationException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
+
     }
 }

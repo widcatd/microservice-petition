@@ -15,4 +15,5 @@ public class Petition {
     private String email;
     private Long idState;
     private Long idLoanType;
+    private String identityDocument;
 }

@@ -5,15 +5,16 @@ import com.petition.model.exceptionusecase.ExceptionUseCaseResponse;
 import com.petition.model.petition.Petition;
 import com.petition.model.petition.gateways.PetitionRepository;
 import com.petition.r2dbc.entity.PetitionEntity;
-import com.petition.r2dbc.entity.StateEntity;
 import com.petition.r2dbc.helper.ReactiveAdapterOperations;
 import com.petition.r2dbc.repository.loantype.LoanTypeReactiveRepository;
 import com.petition.r2dbc.repository.state.StateReactiveRepository;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 @Repository
+@Transactional
 public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     Petition/* change for domain model */,
         PetitionEntity/* change for adapter model */,

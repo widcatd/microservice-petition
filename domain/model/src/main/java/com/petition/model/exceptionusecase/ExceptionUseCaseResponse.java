@@ -13,7 +13,12 @@ public enum ExceptionUseCaseResponse {
     ID_LOAN_TYPE_NOT_FOUND("ERR-006","No existe el id solicitud prestamo %d"),
     EMAIL_ALREADY_EXIST("ERR-007","El email %s ya se encuentra registrado"),
     ID_USER_ALREADY_EXISTS("ERR-008", "The program already has an assigned ID_USER %d"),
-    STATE_REGISTER_NOT_FOUND("ERR-008", "El registro de estado no existe");
+    STATE_REGISTER_NOT_FOUND("ERR-008", "El registro de estado no existe"),
+
+    PETITION_IDENTITY_DOCUMENT_NULL("PET-001", "Se debe agregar el documento de identidad"),
+    PETITION_MOUNT_NULL("PET-002", "Se debe agregar el monto"),
+    PETITION_LOAN_TERM_NULL("PET-003", "Se debe agregar el plazo"),
+    PETITION_ID_LOAN_TYPE_NULL("PET-004", "Se debe agregar el id del tipo de préstamo");
 
     private final String code;
     private final String message;
