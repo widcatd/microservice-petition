@@ -6,8 +6,8 @@ import lombok.Getter;
 public enum StateEnum {
 
     PENDING_REVIEW("PENDIENTE DE REVISION"),
-    APPROVED("APROBADO"),
-    REJECTED("RECHAZADO");
+    ANUAL_REVISION("REVISION MANUAL"),
+    REJECTED("RECHAZADAS");
 
     private final String stateName;
 
