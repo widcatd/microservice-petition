@@ -7,4 +7,5 @@ import reactor.core.publisher.Mono;
 
 public interface StateReactiveRepository extends ReactiveCrudRepository<StateEntity, Long>, ReactiveQueryByExampleExecutor<StateEntity> {
     Mono<StateEntity> findByName(String name);
+    Mono<StateEntity> findByIdState(Long idState);
 }

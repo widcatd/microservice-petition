@@ -15,6 +15,7 @@ import reactor.test.StepVerifier;
 import static org.mockito.Mockito.*;
 
 class PetitionUseCaseTest {
+    private static final String traceId= "74654859-d75f-448e-9b5e-a6ddee9f5278";
 
     @Mock
     private PetitionRepository petitionRepository;
@@ -31,14 +32,14 @@ class PetitionUseCaseTest {
     @DisplayName("Se guarda la petition exitosamente")
     void shouldSavePetitionSuccessfully() {
         Petition petition = PetitionMock.validPetition();
-        when(petitionRepository.savePetition(petition)).thenReturn(Mono.just(petition));
+        when(petitionRepository.savePetition(petition,traceId)).thenReturn(Mono.just(petition));
 
-        Mono<Void> result = petitionUseCase.savePetition(petition);
+        Mono<Void> result = petitionUseCase.savePetition(petition,traceId);
 
 
         StepVerifier.create(result)
                 .verifyComplete();
-        verify(petitionRepository, times(1)).savePetition(petition);
+        verify(petitionRepository, times(1)).savePetition(petition, traceId);
     }
 
 }

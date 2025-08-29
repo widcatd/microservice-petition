@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class PetitionUseCase {
     private final PetitionRepository petitionRepository;
-    public Mono<Void> savePetition(Petition petition) {
-        return petitionRepository.savePetition(petition).then();
+    public Mono<Void> savePetition(Petition petition, String traceId) {
+        return petitionRepository.savePetition(petition, traceId).then();
     }
 }

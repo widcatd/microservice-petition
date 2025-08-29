@@ -28,4 +28,7 @@ public class CreatePetitionDto {
     @Schema(description = "Correo electrónico del usuario",
             example = "usuario@correo.com")
     private String email;
+    @Schema(description = "Identificador de estado",
+            example = "1")
+    private Long idState;
 }
