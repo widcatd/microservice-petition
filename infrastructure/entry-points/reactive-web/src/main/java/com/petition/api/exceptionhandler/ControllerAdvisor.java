@@ -1,9 +1,7 @@
 package com.petition.api.exceptionhandler;
 
-import com.petition.api.exception.IdentityDocumentNotFoundException;
-import com.petition.model.exception.DataAlreadyExistException;
-import com.petition.model.exception.PetitionValidationException;
-import com.petition.model.exception.RegisterNotFoundException;
+import com.petition.model.exception.*;
+import com.petition.model.exceptionusecase.ExceptionResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -13,6 +11,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @Component
@@ -58,7 +57,6 @@ public class ControllerAdvisor {
     }
     public Mono<ServerResponse> handleDataAlreadyExistsException(RegisterNotFoundException ex, ServerRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.NOT_FOUND,
                 ex.getCode(),
                 ex.getMessage(),
                 request.path()
@@ -69,7 +67,16 @@ public class ControllerAdvisor {
     }
     public Mono<ServerResponse> handleDataAlreadyExistsException(PetitionValidationException ex, ServerRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST,
+                ex.getCode(),
+                ex.getMessage(),
+                request.path()
+        );
+        return ServerResponse.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(errorResponse);
+    }
+    public Mono<ServerResponse> handleDataAlreadyExistsException(PermissionDeniedException ex, ServerRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
                 ex.getCode(),
                 ex.getMessage(),
                 request.path()

@@ -18,7 +18,14 @@ public enum ExceptionUseCaseResponse {
     PETITION_IDENTITY_DOCUMENT_NULL("PET-001", "Se debe agregar el documento de identidad"),
     PETITION_MOUNT_NULL("PET-002", "Se debe agregar el monto"),
     PETITION_LOAN_TERM_NULL("PET-003", "Se debe agregar el plazo"),
-    PETITION_ID_LOAN_TYPE_NULL("PET-004", "Se debe agregar el id del tipo de préstamo");
+    PETITION_ID_LOAN_TYPE_NULL("PET-004", "Se debe agregar el id del tipo de préstamo"),
+
+    JWT_TOKEN_NOT_FOUND("JWT-001", "El token no se encontró en la cabecera Authorization"),
+    JWT_TOKEN_INVALID("JWT-002", "El token enviado es inválido"),
+    JWT_TOKEN_EXPIRED("JWT-003", "El token ha expirado"),
+    JWT_TOKEN_UNSUPPORTED("JWT-004", "El formato del token no es soportado"),
+    JWT_TOKEN_MALFORMED("JWT-005", "El token está mal formado"),
+    JWT_UNAUTHORIZED("JWT-006", "No autorizado: se requiere un token válido para acceder a este recurso");
 
     private final String code;
     private final String message;
