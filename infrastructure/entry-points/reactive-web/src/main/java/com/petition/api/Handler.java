@@ -1,14 +1,10 @@
 package com.petition.api;
 
-import com.petition.model.exception.IdentityDocumentNotFoundException;
+import com.petition.model.exception.*;
 import com.petition.api.exceptionhandler.ControllerAdvisor;
-import com.petition.model.exception.PermissionDeniedException;
-import com.petition.model.exceptionusecase.ExceptionResponse;
-import com.petition.api.webclient.IAuthenticationClient;
 import com.petition.model.constants.Constants;
-import com.petition.model.exception.PetitionValidationException;
+import com.petition.model.petition.PageRequest;
 import com.petition.usecase.petition.validation.PetitionValidatorUseCase;
-import com.petition.model.exception.RegisterNotFoundException;
 import com.petition.model.petition.Petition;
 import com.petition.usecase.petition.PetitionUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,9 +16,11 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -30,7 +28,6 @@ import java.net.URI;
 @Tag(name = "Solicitudes", description = "Operaciones sobre solicitudes")
 public class Handler {
     private final PetitionUseCase petitionUseCase;
-    private final IAuthenticationClient authenticationClient;
     private final ControllerAdvisor controllerAdvisor;
     private final PetitionValidatorUseCase petitionValidatorUseCase;
 
@@ -57,6 +54,32 @@ public class Handler {
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
                 .onErrorResume(PermissionDeniedException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
+
+    }
+
+    public Mono<ServerResponse> findBySearch(ServerRequest serverRequest) {
+        String traceId = serverRequest.headers().firstHeader("X-Trace-Id");
+        String authHeader = serverRequest.headers().firstHeader(HttpHeaders.AUTHORIZATION);
+        Long stateId = serverRequest.queryParam("stateId")
+                .map(Long::valueOf)
+                .orElse(null);
+
+        PageRequest pageRequest = PageRequest.builder()
+                .page(Integer.parseInt(serverRequest.queryParam("page").orElse("0")))
+                .size(Integer.parseInt(serverRequest.queryParam("size").orElse("10")))
+                .build();
+        log.info(Constants.LOG_SEARCH_REQUEST_RECEIVED, stateId, pageRequest.getPage(), pageRequest.getSize(), traceId);
+        return petitionUseCase.findBySearch(stateId, pageRequest, traceId, authHeader)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(list))
+                .doOnSuccess(resp -> log.info(Constants.LOG_SEARCH_RESPONSE_SENT, resp.statusCode(), traceId))
+                .doOnError(error -> log.error(Constants.LOG_SEARCH_ERROR, error.getMessage(), traceId, error))
+                .onErrorResume(DataNotFoundException.class,
+                        ex -> controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
+                .onErrorResume(PermissionDeniedException.class,
+                ex -> controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
 
     }
 }

@@ -1,7 +1,11 @@
 package com.petition.api;
 
 import com.petition.api.dto.CreatePetitionDto;
+import com.petition.model.petition.PetitionSearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,9 +54,59 @@ public class RouterRest {
                                     ),
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/solicitud/revision/findBySearch",
+                    produces = { MediaType.APPLICATION_JSON_VALUE },
+                    method = RequestMethod.GET,
+                    beanClass = Handler.class,
+                    beanMethod = "findBySearch",
+                    operation = @Operation(
+                            operationId = "findBySearch",
+                            summary = "Buscar solicitudes por filtros",
+                            description = "Permite buscar solicitudes aplicando filtros como estado, paginación, etc.",
+                            tags = { "Solicitudes" },
+                            parameters = {
+                                    @Parameter(
+                                            name = "stateId",
+                                            in = ParameterIn.QUERY,
+                                            description = "ID del estado de la solicitud",
+                                            required = true,
+                                            schema = @Schema(type = "integer", example = "1")
+                                    ),
+                                    @Parameter(
+                                            name = "page",
+                                            in = ParameterIn.QUERY,
+                                            description = "Número de página (para paginación)",
+                                            required = false,
+                                            schema = @Schema(type = "integer", example = "0")
+                                    ),
+                                    @Parameter(
+                                            name = "size",
+                                            in = ParameterIn.QUERY,
+                                            description = "Cantidad de registros por página",
+                                            required = false,
+                                            schema = @Schema(type = "integer", example = "10")
+                                    )
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Resultados encontrados",
+                                            content = @Content(
+                                                    array = @ArraySchema(schema = @Schema(implementation = PetitionSearchResponse.class))
+                                            )
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "500",
+                                            description = "Error en el servidor"
+                                    )
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-        return route(POST("/api/v1/solicitud/"), handler::savePetition);
+        return route(POST("/api/v1/solicitud/"), handler::savePetition)
+                .andRoute(GET("/api/v1/solicitud/revision/findBySearch"), handler::findBySearch);
     }
 }

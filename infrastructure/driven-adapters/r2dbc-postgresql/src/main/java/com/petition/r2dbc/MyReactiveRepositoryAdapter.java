@@ -4,6 +4,7 @@ import com.petition.model.constants.Constants;
 import com.petition.model.constants.StateEnum;
 import com.petition.model.exception.RegisterNotFoundException;
 import com.petition.model.exceptionusecase.ExceptionUseCaseResponse;
+import com.petition.model.petition.PageRequest;
 import com.petition.model.petition.Petition;
 import com.petition.model.petition.gateways.PetitionRepository;
 import com.petition.r2dbc.entity.PetitionEntity;
@@ -12,8 +13,10 @@ import com.petition.r2dbc.repository.loantype.LoanTypeReactiveRepository;
 import com.petition.r2dbc.repository.state.StateReactiveRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -80,5 +83,17 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                 .doOnError(error ->
                         log.error(Constants.LOG_REPO_ERROR_SAVING, error.getMessage(), traceId, error))
                 .map(e -> mapper.map(e, Petition.class));
+    }
+
+    @Override
+    public Flux<Petition> findByIdState(Long stateId, PageRequest pageRequest, String traceId) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                pageRequest.getPage(),
+                pageRequest.getSize()
+        );
+        log.info(Constants.LOG_REPO_START_SEARCH, stateId, pageRequest.getPage(), pageRequest.getSize(), traceId);
+        return repository.findByIdState(stateId, pageable)
+                .doOnComplete(() -> log.info(Constants.LOG_REPO_SEARCH_COMPLETED, traceId))
+                .doOnError(error -> log.error(Constants.LOG_REPO_SEARCH_ERROR, error.getMessage(), traceId, error));
     }
 }

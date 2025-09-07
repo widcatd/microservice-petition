@@ -15,16 +15,24 @@ public class RestConsumer implements AuthClient {
     private final WebClient client;
 
     @Override
-    public Mono<User> findByDocument(String identityDocument, String authHeader) {
+    public Mono<User> findByDocument(String identityDocument, String authHeader,  String traceId) {
         return client.get()
                 .uri("/api/v1/usuarios/findByDocument/{identityDocument}", identityDocument)
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .header("X-Trace-Id", traceId)
                 .retrieve()
                 .bodyToMono(User.class);
     }
 
-    // these methods are an example that illustrates the implementation of WebClient.
-    // You should use the methods that you implement from the Gateway from the domain.
+    @Override
+    public Mono<User> findByEmail(String email, String authHeader,  String traceId) {
+        return client.get()
+                .uri("/api/v1/usuarios/findByEmail/{email}", email)
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .header("X-Trace-Id", traceId)
+                .retrieve()
+                .bodyToMono(User.class);
+    }
 
     @CircuitBreaker(name = "testGet" /*, fallbackMethod = "testGetOk"*/)
     public Mono<ObjectResponse> testGet() {

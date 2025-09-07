@@ -85,4 +85,14 @@ public class ControllerAdvisor {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(errorResponse);
     }
+    public Mono<ServerResponse> handleDataAlreadyExistsException(DataNotFoundException ex, ServerRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                ex.getCode(),
+                ex.getMessage(),
+                request.path()
+        );
+        return ServerResponse.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(errorResponse);
+    }
 }
