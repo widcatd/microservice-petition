@@ -20,14 +20,44 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8081,http://localhost:8080"
-
 adapters:
   r2dbc:
-    host: localhost
+    host: "localhost"
     port: 5437
-    database: solicitudes
-    schema: public
-    username: postgres
-    password: mysecretpassword
+    database: "solicitudes"
+    schema: "public"
+    username: "postgres"
+    password: "mysecretpassword"
+adapter:
+  restconsumer:
+    timeout: 5000
+    url: "http://localhost:8080"
+resilience4j:
+  circuitbreaker:
+    instances:
+      testGet:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+      testPost:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+jwt:
+  secret: 6b1a96e1560e4560c59fd70326cd02d5d550dd3d648aae7259ca4de77901c0bc
+  expiration: 3600000

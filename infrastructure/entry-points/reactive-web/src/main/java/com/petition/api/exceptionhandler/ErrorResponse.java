@@ -28,4 +28,9 @@ public class ErrorResponse {
         this.message = message;
         this.details = details;
     }
+    public ErrorResponse(String code, String message, String path) {
+        this.code = code;
+        this.message = message;
+        this.path = path;
+    }
 }

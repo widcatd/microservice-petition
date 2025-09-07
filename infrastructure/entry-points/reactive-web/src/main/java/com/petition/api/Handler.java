@@ -1,8 +1,9 @@
 package com.petition.api;
 
-import com.petition.api.exception.IdentityDocumentNotFoundException;
+import com.petition.model.exception.IdentityDocumentNotFoundException;
 import com.petition.api.exceptionhandler.ControllerAdvisor;
-import com.petition.api.exceptionhandler.ExceptionResponse;
+import com.petition.model.exception.PermissionDeniedException;
+import com.petition.model.exceptionusecase.ExceptionResponse;
 import com.petition.api.webclient.IAuthenticationClient;
 import com.petition.model.constants.Constants;
 import com.petition.model.exception.PetitionValidationException;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -35,21 +37,12 @@ public class Handler {
     @Operation(summary = "Crear una solicitud")
     public Mono<ServerResponse> savePetition(ServerRequest serverRequest) {
         String traceId = serverRequest.headers().firstHeader("X-Trace-Id");
+        String authHeader = serverRequest.headers().firstHeader(HttpHeaders.AUTHORIZATION);
         log.info(Constants.LOG_REQUEST_RECEIVED, traceId);
         return serverRequest.bodyToMono(Petition.class)
                 .flatMap(petitionValidatorUseCase::validate)
                 .doOnNext(result -> log.info(Constants.LOG_PETITION_VALIDATOR_PROCESSING, result, traceId))
-                .flatMap(petition ->
-                        authenticationClient.findByDocument(petition.getIdentityDocument())
-                                .switchIfEmpty(Mono.error(new IdentityDocumentNotFoundException( ExceptionResponse.IDENTITY_DOCUMENT_NOT_FOUND.getCode(),
-                                        String.format(ExceptionResponse.IDENTITY_DOCUMENT_NOT_FOUND.getMessage(), petition.getIdentityDocument()))))
-                                .doOnNext(userDto -> log.info(Constants.LOG_USER_FOUND, userDto.getEmail(), traceId))
-                                .map(userDto ->{
-                                    petition.setEmail(userDto.getEmail());
-                                    return petition;
-                                })
-                )
-                .flatMap(petition -> petitionUseCase.savePetition(petition,traceId))
+                .flatMap(petition -> petitionUseCase.savePetition(petition,traceId, authHeader))
                 .doOnSuccess(saved -> log.info(Constants.LOG_PETITION_SAVED, traceId))
                 .then(Mono.defer(() -> ServerResponse.created(URI.create("/api/v1/solicitud/"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -61,6 +54,8 @@ public class Handler {
                 .onErrorResume(IdentityDocumentNotFoundException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
                 .onErrorResume(PetitionValidationException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
+                .onErrorResume(PermissionDeniedException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
 
     }
