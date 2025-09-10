@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${PORT_PETITION}
 spring:
   application:
     name: "Petition"
@@ -24,19 +24,22 @@ management:
     circuitbreakers:
       enabled: true
 cors:
-  allowed-origins: "http://localhost:4200,http://localhost:8081,http://localhost:8080"
+  allowed-origins: "http://localhost:4200,http://localhost:${PORT_PETITION},http://localhost:${PORT_AUTH}"
+
 adapters:
   r2dbc:
-    host: "localhost"
-    port: 5437
-    database: "solicitudes"
+    host: ${DB_PETITION_HOST}
+    port: ${DB_PETITION_PORT}
+    database: ${DB_PETITION_NAME}
     schema: "public"
-    username: "postgres"
-    password: "mysecretpassword"
+    username: ${DB_PETITION_USER}
+    password: ${DB_PETITION_PASSWORD}
+
 adapter:
   restconsumer:
     timeout: 5000
-    url: "http://localhost:8080"
+    url: ${RESTCONSUMER_URL}
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -58,6 +61,7 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
         waitDurationInOpenState: "10s"
+
 jwt:
-  secret: 6b1a96e1560e4560c59fd70326cd02d5d550dd3d648aae7259ca4de77901c0bc
-  expiration: 3600000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
