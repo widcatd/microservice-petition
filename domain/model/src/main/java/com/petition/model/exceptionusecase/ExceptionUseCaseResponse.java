@@ -25,7 +25,11 @@ public enum ExceptionUseCaseResponse {
     JWT_TOKEN_EXPIRED("JWT-003", "El token ha expirado"),
     JWT_TOKEN_UNSUPPORTED("JWT-004", "El formato del token no es soportado"),
     JWT_TOKEN_MALFORMED("JWT-005", "El token está mal formado"),
-    JWT_UNAUTHORIZED("JWT-006", "No autorizado: se requiere un token válido para acceder a este recurso");
+    JWT_UNAUTHORIZED("JWT-006", "No autorizado: se requiere un token válido para acceder a este recurso"),
+
+    PETITION_REGISTER_BY_ID_STATUS_NOT_FOUND("PET-001", "El registro de de solicitud no existe por el status id: %d"),
+
+    STATE_ID_NOT_FOUND("STA-001", "El id de estado es nulo");
 
     private final String code;
     private final String message;

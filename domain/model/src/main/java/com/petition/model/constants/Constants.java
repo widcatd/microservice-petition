@@ -20,4 +20,16 @@ public class Constants {
     public static final String LOG_REPO_ERROR_SAVING = "Error guardando Petition en repositorio, mensaje: {}, traceId: {}";
 
 
+    public static final String LOG_SEARCH_REQUEST_RECEIVED = "Búsqueda recibida con stateId={}, page={}, size={}, traceId={}";
+    public static final String LOG_SEARCH_RESULTS_FOUND = "Resultados obtenidos={}, traceId={}";
+    public static final String LOG_SEARCH_RESPONSE_SENT = "Respuesta enviada para búsqueda con status={}, traceId={}";
+    public static final String LOG_SEARCH_ERROR = "Error procesando búsqueda: {}, traceId={}";
+
+    public static final String LOG_REPO_START_SEARCH = "Iniciando búsqueda de Petitions con stateId={}, page={}, size={}, traceId={}";
+    public static final String LOG_REPO_SEARCH_RESULT = "Petition encontrada con id={}, traceId={}";
+    public static final String LOG_REPO_SEARCH_COMPLETED = "Búsqueda de Petitions completada, traceId={}";
+    public static final String LOG_REPO_SEARCH_ERROR = "Error en búsqueda de Petitions: {}, traceId={}";
+
+
+
 }

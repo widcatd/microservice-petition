@@ -36,6 +36,7 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll()
                         .pathMatchers("/api/v1/solicitud/").hasRole("CLIENTE")
+                        .pathMatchers("/api/v1/solicitud/revision/findBySearch**").hasRole("ASESOR")
                         .anyExchange().denyAll())
                 .addFilterAfter(jwtFilter, SecurityWebFiltersOrder.FIRST)
                 .securityContextRepository(securityContextRepository)
