@@ -36,4 +36,19 @@ public class PetitionValidatorUseCase {
                         ExceptionUseCaseResponse.PETITION_ID_LOAN_TYPE_NULL.getMessage()
                 )));
     }
+    public Mono<Petition> validateUpdate(Petition petition) {
+        return Mono.just(petition)
+                .filter(p ->p.getIdPetition() != null)
+                .switchIfEmpty(Mono.error(new PetitionValidationException(
+                        ExceptionUseCaseResponse.PETITION_IDENTITY_DOCUMENT_NULL.getCode(),
+                        ExceptionUseCaseResponse.PETITION_IDENTITY_DOCUMENT_NULL.getMessage()
+                )))
+
+                .filter(p ->p.getIdState() != null)
+                .switchIfEmpty(Mono.error(new PetitionValidationException(
+                        ExceptionUseCaseResponse.PETITION_IDENTITY_DOCUMENT_NULL.getCode(),
+                        ExceptionUseCaseResponse.PETITION_IDENTITY_DOCUMENT_NULL.getMessage()
+                )));
+
+    }
 }

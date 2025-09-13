@@ -93,7 +93,36 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         );
         log.info(Constants.LOG_REPO_START_SEARCH, stateId, pageRequest.getPage(), pageRequest.getSize(), traceId);
         return repository.findByIdState(stateId, pageable)
+                .map(e -> mapper.map(e, Petition.class))
+                .doOnNext(System.out::println)
                 .doOnComplete(() -> log.info(Constants.LOG_REPO_SEARCH_COMPLETED, traceId))
                 .doOnError(error -> log.error(Constants.LOG_REPO_SEARCH_ERROR, error.getMessage(), traceId, error));
+    }
+
+    @Override
+    public Mono<Petition> updatePetition(Petition petition, String traceId) {
+        log.info(Constants.LOG_REPO_START_UPDATE, petition.getIdState(), traceId);
+        return repository.findByIdPetition(petition.getIdPetition())
+                .switchIfEmpty(Mono.error(new RegisterNotFoundException(
+                        ExceptionUseCaseResponse.PETITION_ID_NOT_FOUND.getCode(),
+                        String.format(ExceptionUseCaseResponse.PETITION_ID_NOT_FOUND.getMessage(), petition.getIdLoanType())
+                )))
+                .flatMap(petitionUpdate ->
+                stateReactiveRepository.findByIdState(petition.getIdState())
+                        .switchIfEmpty(Mono.error(new RegisterNotFoundException(
+                                ExceptionUseCaseResponse.STATE_REGISTER_NOT_FOUND.getCode(),
+                                String.format(ExceptionUseCaseResponse.STATE_REGISTER_NOT_FOUND.getMessage(), petition.getIdState())
+                        )))
+                        .map(stateUpdate -> {
+                            petitionUpdate.setIdState(stateUpdate.getIdState());
+                            return petitionUpdate;
+                        }))
+                .flatMap(repository::save)
+                .map(e -> mapper.map(e, Petition.class))
+                .doOnSuccess(saved ->
+                        log.info(Constants.LOG_REPO_UPDATE_SUCCESS, saved.getIdPetition(), traceId))
+                .doOnError(error ->
+                        log.error(Constants.LOG_REPO_ERROR_UPDATE, error.getMessage(), traceId, error));
+
     }
 }

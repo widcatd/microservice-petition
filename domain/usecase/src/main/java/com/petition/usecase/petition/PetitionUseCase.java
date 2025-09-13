@@ -10,8 +10,12 @@ import com.petition.model.exceptionusecase.ExceptionUseCaseResponse;
 import com.petition.model.loantype.gateways.LoanTypeRepository;
 import com.petition.model.petition.*;
 import com.petition.model.petition.gateways.PetitionRepository;
+import com.petition.model.sqs.MessageRequest;
 import com.petition.model.state.gateways.AuthClient;
+import com.petition.model.state.gateways.SqsClient;
 import com.petition.model.state.gateways.StateRepository;
+import com.petition.usecase.petition.message.Message;
+import com.petition.usecase.petition.validation.PetitionValidatorUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,6 +28,8 @@ public class PetitionUseCase {
     private final StateRepository stateRepository;
     private final IJwtProvider jwtProvider;
     private final AuthClient authClient;
+    private final PetitionValidatorUseCase petitionValidatorUseCase;
+    private final SqsClient sqsClient;
 
     public Mono<Void> savePetition(Petition petition, String traceId, String authHeader) {
         return authClient.findByDocument(petition.getIdentityDocument(), authHeader, traceId)
@@ -69,4 +75,19 @@ public class PetitionUseCase {
                 );
     }
 
+    public Mono<Petition> updatePetition(Petition petition, String traceId) {
+        return petitionValidatorUseCase.validateUpdate(petition)
+                .flatMap(petitionUpdate -> petitionRepository.updatePetition(petitionUpdate, traceId ))
+                .flatMap(petitionResponse ->
+                        stateRepository.findByIdState(petitionResponse.getIdState())
+                                .flatMap(state -> {
+                                    MessageRequest messageRequest =
+                                            new MessageRequest(petitionResponse.getEmail(),
+                                                    String.format(Message.ESTADO_SOLICITUD,state.getName()),
+                                                    Message.SUBJECT);
+                                    return sqsClient.sendMessage(messageRequest, traceId);
+                                })
+                                .flatMap(message -> Mono.just(petitionResponse))
+                );
+    }
 }

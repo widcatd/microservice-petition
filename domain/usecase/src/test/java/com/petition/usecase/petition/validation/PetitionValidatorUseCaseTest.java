@@ -105,4 +105,25 @@ class PetitionValidatorUseCaseTest {
                 })
                 .verify();
     }
+    @Test
+    @DisplayName("validateUpdate - falla cuando idPetition es null")
+    void shouldFailValidateUpdateWhenIdPetitionIsNull() {
+        Petition petition = PetitionMock.validPetition();
+        petition.setIdPetition(null);
+
+        StepVerifier.create(validator.validateUpdate(petition))
+                .expectError(PetitionValidationException.class)
+                .verify();
+    }
+
+    @Test
+    @DisplayName("validateUpdate - falla cuando idState es null")
+    void shouldFailValidateUpdateWhenIdStateIsNull() {
+        Petition petition = PetitionMock.validPetition();
+        petition.setIdState(null);
+
+        StepVerifier.create(validator.validateUpdate(petition))
+                .expectError(PetitionValidationException.class)
+                .verify();
+    }
 }

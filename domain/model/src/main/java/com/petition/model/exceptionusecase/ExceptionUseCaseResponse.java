@@ -19,6 +19,7 @@ public enum ExceptionUseCaseResponse {
     PETITION_MOUNT_NULL("PET-002", "Se debe agregar el monto"),
     PETITION_LOAN_TERM_NULL("PET-003", "Se debe agregar el plazo"),
     PETITION_ID_LOAN_TYPE_NULL("PET-004", "Se debe agregar el id del tipo de préstamo"),
+    PETITION_ID_NOT_FOUND("PET-006", "No existe la solicitud con id %d"),
 
     JWT_TOKEN_NOT_FOUND("JWT-001", "El token no se encontró en la cabecera Authorization"),
     JWT_TOKEN_INVALID("JWT-002", "El token enviado es inválido"),

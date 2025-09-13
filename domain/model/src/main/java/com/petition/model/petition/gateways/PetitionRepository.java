@@ -8,4 +8,5 @@ import reactor.core.publisher.Mono;
 public interface PetitionRepository {
     Mono<Petition> savePetition(Petition petition, String traceId);
     Flux<Petition> findByIdState(Long stateId, PageRequest pageRequest, String traceId);
+    Mono<Petition> updatePetition(Petition petition, String traceId);
 }
