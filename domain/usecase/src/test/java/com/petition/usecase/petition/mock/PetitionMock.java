@@ -15,4 +15,12 @@ public class PetitionMock {
                 .idLoanType(1L)
                 .build();
     }
+    public static Petition invalidPetition() {
+        return Petition.builder()
+                .identityDocument("1234567890")
+                .mount(BigDecimal.valueOf(15000.50))
+                .loanTerm(12)
+                .idLoanType(1L)
+                .build();
+    }
 }

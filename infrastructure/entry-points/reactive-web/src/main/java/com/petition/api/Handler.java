@@ -82,4 +82,23 @@ public class Handler {
                 ex -> controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
 
     }
+
+    public Mono<ServerResponse> updatePetition(ServerRequest serverRequest) {
+        String traceId = serverRequest.headers().firstHeader("X-Trace-Id");
+        log.info(Constants.LOG_REQUEST_RECEIVED, traceId);
+        return serverRequest.bodyToMono(Petition.class)
+                .flatMap(petition -> petitionUseCase.updatePetition(petition,traceId))
+                .flatMap(petitionUpdate -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(petitionUpdate)
+                )
+                .doOnSuccess(saved -> log.info(Constants.LOG_PETITION_SAVED, traceId))
+                .doOnError(error -> log.error(Constants.LOG_ERROR_PROCESSING, error.getMessage(), traceId, error))
+                .onErrorResume(RegisterNotFoundException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
+                .onErrorResume(PetitionValidationException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest))
+                .onErrorResume(PermissionDeniedException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
+    }
 }

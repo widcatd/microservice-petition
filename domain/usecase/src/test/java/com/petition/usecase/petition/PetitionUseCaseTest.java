@@ -3,18 +3,23 @@ package com.petition.usecase.petition;
 import com.petition.model.auth.IJwtProvider;
 import com.petition.model.exception.DataNotFoundException;
 import com.petition.model.exception.IdentityDocumentNotFoundException;
+import com.petition.model.exception.PetitionValidationException;
 import com.petition.model.exception.RegisterNotFoundException;
+import com.petition.model.exceptionusecase.ExceptionUseCaseResponse;
 import com.petition.model.loantype.LoanType;
 import com.petition.model.loantype.gateways.LoanTypeRepository;
 import com.petition.model.petition.Petition;
 import com.petition.model.petition.PageRequest;
 import com.petition.model.petition.PetitionSearchResponse;
 import com.petition.model.petition.gateways.PetitionRepository;
+import com.petition.model.sqs.MessageRequest;
 import com.petition.model.state.State;
 import com.petition.model.state.gateways.AuthClient;
+import com.petition.model.state.gateways.SqsClient;
 import com.petition.model.state.gateways.StateRepository;
 import com.petition.model.webclient.User;
 import com.petition.usecase.petition.mock.PetitionMock;
+import com.petition.usecase.petition.validation.PetitionValidatorUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +49,10 @@ class PetitionUseCaseTest {
     private IJwtProvider jwtProvider;
     @Mock
     private AuthClient authClient;
+    @Mock
+    private SqsClient sqsClient;
+    @Mock
+    private PetitionValidatorUseCase petitionValidatorUseCase;
 
     @InjectMocks
     private PetitionUseCase petitionUseCase;
@@ -127,14 +136,14 @@ class PetitionUseCaseTest {
         when(loanTypeRepository.findByIdLoanType(petition.getIdLoanType()))
                 .thenReturn(Mono.just(
                         LoanType.builder()
-                                .name("Hipotecario")
+                                .name("prestamo inicial")
                                 .interestRate(BigDecimal.valueOf(10.55))
                                 .build()
                 ));
         when(stateRepository.findByIdState(petition.getIdState()))
                 .thenReturn(Mono.just(
                         State.builder()
-                                .name("Aprobado")
+                                .name("APROBADO")
                                 .build()
                 ));
         when(authClient.findByEmail(petition.getEmail(), AUTH_HEADER, TRACE_ID))
@@ -150,8 +159,8 @@ class PetitionUseCaseTest {
 
         StepVerifier.create(result)
                 .expectNextMatches(response ->
-                        response.getLoanType().equals("Hipotecario")
-                                && response.getPetitionState().equals("Aprobado")
+                        response.getLoanType().equals("prestamo inicial")
+                                && response.getPetitionState().equals("APROBADO")
                                 && response.getBaseSalary().compareTo(BigDecimal.valueOf(2500.0)) == 0
                 )
                 .verifyComplete();
@@ -161,6 +170,55 @@ class PetitionUseCaseTest {
         verify(stateRepository).findByIdState(petition.getIdState());
         verify(authClient).findByEmail(petition.getEmail(), AUTH_HEADER, TRACE_ID);
     }
+    @Test
+    @DisplayName("se actualiza correctamente y envía mensaje a SQS")
+    void shouldUpdatePetitionSuccessfully() {
+        Petition petition = PetitionMock.validPetition();
+        Petition updatedPetition = PetitionMock.validPetition();
+        updatedPetition.setIdState(1L);
+        updatedPetition.setEmail(EMAIL);
 
+        State state = State.builder().idState(1L).name("APROBADO").build();
+
+        when(petitionValidatorUseCase.validateUpdate(petition))
+                .thenReturn(Mono.just(updatedPetition));
+        when(petitionRepository.updatePetition(updatedPetition, TRACE_ID))
+                .thenReturn(Mono.just(updatedPetition));
+        when(stateRepository.findByIdState(updatedPetition.getIdState()))
+                .thenReturn(Mono.just(state));
+        when(sqsClient.sendMessage(any(MessageRequest.class), eq(TRACE_ID)))
+                .thenReturn(Mono.just("OK"));
+
+        Mono<Petition> result = petitionUseCase.updatePetition(petition, TRACE_ID);
+
+        StepVerifier.create(result)
+                .expectNextMatches(resp ->
+                        resp.getIdState().equals(1L) &&
+                                resp.getEmail().equals(EMAIL))
+                .verifyComplete();
+
+        verify(petitionValidatorUseCase).validateUpdate(petition);
+        verify(petitionRepository).updatePetition(any(Petition.class), eq(TRACE_ID));
+        verify(stateRepository).findByIdState(updatedPetition.getIdState());
+        verify(sqsClient).sendMessage(any(MessageRequest.class), eq(TRACE_ID));
+    }
+
+    @Test
+    @DisplayName("error en validación")
+    void shouldThrowWhenValidationFails() {
+        Petition petition = PetitionMock.validPetition();
+
+        when(petitionValidatorUseCase.validateUpdate(petition))
+                .thenReturn(Mono.error(new IllegalArgumentException("Validation error")));
+
+        Mono<Petition> result = petitionUseCase.updatePetition(petition, TRACE_ID);
+
+        StepVerifier.create(result)
+                .expectError(IllegalArgumentException.class)
+                .verify();
+
+        verify(petitionValidatorUseCase).validateUpdate(petition);
+        verifyNoInteractions(petitionRepository, stateRepository, sqsClient);
+    }
 
 }

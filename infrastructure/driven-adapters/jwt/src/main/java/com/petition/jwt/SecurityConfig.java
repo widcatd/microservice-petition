@@ -2,6 +2,7 @@ package com.petition.jwt;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -35,7 +36,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .pathMatchers("/api/v1/solicitud/").hasRole("CLIENTE")
+                        .pathMatchers(HttpMethod.POST,"/api/v1/solicitud/").hasRole("CLIENTE")
+                        .pathMatchers(HttpMethod.PUT,"/api/v1/solicitud/").hasRole("ASESOR")
                         .pathMatchers("/api/v1/solicitud/revision/findBySearch**").hasRole("ASESOR")
                         .anyExchange().denyAll())
                 .addFilterAfter(jwtFilter, SecurityWebFiltersOrder.FIRST)
