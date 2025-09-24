@@ -107,6 +107,7 @@ public class RouterRest {
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/solicitud/"), handler::savePetition)
                 .andRoute(PUT("/api/v1/solicitud/"), handler::updatePetition)
-                .andRoute(GET("/api/v1/solicitud/revision/findBySearch"), handler::findBySearch);
+                .andRoute(GET("/api/v1/solicitud/revision/findBySearch"), handler::findBySearch)
+                .andRoute(POST("/api/v1/solicitud/calcular-capacidad"),handler::calculateCapacity);
     }
 }

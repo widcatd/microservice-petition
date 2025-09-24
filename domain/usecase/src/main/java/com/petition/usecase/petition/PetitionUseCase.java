@@ -11,6 +11,7 @@ import com.petition.model.loantype.gateways.LoanTypeRepository;
 import com.petition.model.petition.*;
 import com.petition.model.petition.gateways.PetitionRepository;
 import com.petition.model.sqs.MessageRequest;
+import com.petition.model.sqs.PetitionDecisionResponse;
 import com.petition.model.state.gateways.AuthClient;
 import com.petition.model.state.gateways.SqsClient;
 import com.petition.model.state.gateways.StateRepository;
@@ -82,12 +83,66 @@ public class PetitionUseCase {
                         stateRepository.findByIdState(petitionResponse.getIdState())
                                 .flatMap(state -> {
                                     MessageRequest messageRequest =
-                                            new MessageRequest(petitionResponse.getEmail(),
-                                                    String.format(Message.ESTADO_SOLICITUD,state.getName()),
-                                                    Message.SUBJECT);
+                                            MessageRequest.builder()
+                                                    .email(petitionResponse.getEmail())
+                                                    .message(String.format(Message.ESTADO_SOLICITUD,state.getName()))
+                                                    .state(state.getName())
+                                                    .subject(Message.SUBJECT)
+                                                    .build();
                                     return sqsClient.sendMessage(messageRequest, traceId);
                                 })
                                 .flatMap(message -> Mono.just(petitionResponse))
                 );
+    }
+
+    public Mono<Petition> calculateCapacity(Petition petition, String authHeader, String traceId) {
+        return petitionValidatorUseCase.validate(petition)
+                .flatMap(petitionValidate -> petitionRepository.savePetition(petitionValidate, traceId))
+                .flatMap(savedPetitionResponse ->
+                        loanTypeRepository.findByIdLoanType(savedPetitionResponse.getIdLoanType())
+                                .flatMap(loanTermResponse ->
+                                        petitionRepository.findAllPetitionByEmailAndStateAproved(savedPetitionResponse.getEmail(), traceId)
+                                                .collectList()
+                                                .flatMap(petitionDataList ->
+                                                        authClient.findByEmail(petition.getEmail(), authHeader, traceId)
+                                                                .map(user -> PetitionResponseCalculate.builder()
+                                                                        .traceId(traceId)
+                                                                        .idPetition(savedPetitionResponse.getIdPetition())
+                                                                        .mount(savedPetitionResponse.getMount())
+                                                                        .interestRate(loanTermResponse.getInterestRate())
+                                                                        .petitionDataList(petitionDataList)
+                                                                        .email(petition.getEmail())
+                                                                        .loanTerm(savedPetitionResponse.getLoanTerm())
+                                                                        .salaryBase(user.getSalaryBase())
+                                                                        .build()
+                                                                )
+                                                )
+                                                .flatMap(petitionResponseCalculate ->
+                                                        sqsClient.calculateCapacity(petitionResponseCalculate, traceId)
+                                                                .thenReturn(savedPetitionResponse)
+                                                )
+                                )
+                );
+    }
+
+    public Mono<Void> updatePetitionSQSResponse(PetitionDecisionResponse decision) {
+        String traceId = decision.getTraceId();
+        return petitionRepository.updatePetitionSQSResponse(decision)
+                .flatMap(petition ->
+                        loanTypeRepository.findByIdLoanType(petition.getIdLoanType())
+                                .flatMap(loanType -> {
+                                    MessageRequest messageRequest = MessageRequest.builder()
+                                            .email(petition.getEmail())
+                                            .subject(Message.SUBJECT)
+                                            .message(String.format(Message.ESTADO_SOLICITUD,decision.getStatePayment()))
+                                            .state(decision.getStatePayment())
+                                            .loanTerm(petition.getLoanTerm())
+                                            .mount(petition.getMount())
+                                            .interestRate(loanType.getInterestRate())
+                                            .build();
+                                    return sqsClient.sendMessage(messageRequest, traceId);
+                                })
+                )
+                .then();
     }
 }

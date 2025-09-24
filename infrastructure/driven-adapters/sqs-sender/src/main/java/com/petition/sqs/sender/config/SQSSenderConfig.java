@@ -23,7 +23,16 @@ public class SQSSenderConfig {
     @Bean
     public SqsAsyncClient configSqs(SQSSenderProperties properties, MetricPublisher publisher) {
         return SqsAsyncClient.builder()
-                .endpointOverride(resolveEndpoint(properties))
+                //.endpointOverride(resolveEndpoint(properties))
+                .region(Region.of(properties.region()))
+                .overrideConfiguration(o -> o.addMetricPublisher(publisher))
+                .credentialsProvider(getProviderChain())
+                .build();
+    }
+    @Bean
+    public SqsAsyncClient configSqsCapacity(SQSSenderCapacityProperties properties, MetricPublisher publisher) {
+        return SqsAsyncClient.builder()
+                //.endpointOverride(resolveEndpoint(properties))
                 .region(Region.of(properties.region()))
                 .overrideConfiguration(o -> o.addMetricPublisher(publisher))
                 .credentialsProvider(getProviderChain())

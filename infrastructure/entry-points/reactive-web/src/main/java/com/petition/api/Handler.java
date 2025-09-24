@@ -101,4 +101,15 @@ public class Handler {
                 .onErrorResume(PermissionDeniedException.class, ex ->
                         controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
     }
+
+    public Mono<ServerResponse> calculateCapacity(ServerRequest serverRequest) {
+        String traceId = serverRequest.headers().firstHeader("X-Trace-Id");
+        String authHeader = serverRequest.headers().firstHeader(HttpHeaders.AUTHORIZATION);
+        return serverRequest.bodyToMono(Petition.class)
+                .flatMap(petitionRequest -> petitionUseCase.calculateCapacity(petitionRequest,authHeader, traceId))
+                .flatMap(petition -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(petition)
+                );
+    }
 }

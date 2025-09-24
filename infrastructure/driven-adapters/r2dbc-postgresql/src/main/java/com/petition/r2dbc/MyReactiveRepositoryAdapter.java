@@ -6,7 +6,9 @@ import com.petition.model.exception.RegisterNotFoundException;
 import com.petition.model.exceptionusecase.ExceptionUseCaseResponse;
 import com.petition.model.petition.PageRequest;
 import com.petition.model.petition.Petition;
+import com.petition.model.petition.PetitionData;
 import com.petition.model.petition.gateways.PetitionRepository;
+import com.petition.model.sqs.PetitionDecisionResponse;
 import com.petition.r2dbc.entity.PetitionEntity;
 import com.petition.r2dbc.helper.ReactiveAdapterOperations;
 import com.petition.r2dbc.repository.loantype.LoanTypeReactiveRepository;
@@ -124,5 +126,43 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                 .doOnError(error ->
                         log.error(Constants.LOG_REPO_ERROR_UPDATE, error.getMessage(), traceId, error));
 
+    }
+
+    @Override
+    public Flux<PetitionData> findAllPetitionByEmailAndStateAproved(String email, String traceId) {
+        return repository.findApprovedPetitionsByEmail(email)
+                .flatMap(petition ->
+                        loanTypeReactiveRepository.findById(petition.getIdLoanType())
+                                .map(loanType -> PetitionData.builder()
+                                        .idPetition(petition.getIdPetition())
+                                        .mount(petition.getMount())
+                                        .loanTerm(petition.getLoanTerm())
+                                        .email(petition.getEmail())
+                                        .idState(petition.getIdState())
+                                        .idLoanType(petition.getIdLoanType())
+                                        .interestRate(loanType.getInterestRate())
+                                        .build())
+                );
+    }
+    @Override
+    public Mono<Petition> updatePetitionSQSResponse(PetitionDecisionResponse decision) {
+        return repository.findByIdPetition(decision.getIdPetition())
+                .switchIfEmpty(Mono.error(new RegisterNotFoundException(
+                        ExceptionUseCaseResponse.PETITION_ID_NOT_FOUND.getCode(),
+                        String.format(ExceptionUseCaseResponse.PETITION_ID_NOT_FOUND.getMessage(), decision.getIdPetition())
+                )))
+                .flatMap(petitionEntity ->
+                        stateReactiveRepository.findByName(decision.getStatePayment())
+                                .switchIfEmpty(Mono.error(new RegisterNotFoundException(
+                                        ExceptionUseCaseResponse.STATE_REGISTER_NOT_FOUND.getCode(),
+                                        String.format(ExceptionUseCaseResponse.STATE_REGISTER_NOT_FOUND.getMessage())
+                                )))
+                                .map(stateEntity -> {
+                                    petitionEntity.setIdState(stateEntity.getIdState());
+                                    return petitionEntity;
+                                })
+                )
+                .flatMap(repository::save)
+                .map(e -> mapper.map(e, Petition.class));
     }
 }

@@ -38,6 +38,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .pathMatchers(HttpMethod.POST,"/api/v1/solicitud/").hasRole("CLIENTE")
                         .pathMatchers(HttpMethod.PUT,"/api/v1/solicitud/").hasRole("ASESOR")
+                        .pathMatchers(HttpMethod.POST,"/api/v1/solicitud/calcular-capacidad").hasRole("CLIENTE")
                         .pathMatchers("/api/v1/solicitud/revision/findBySearch**").hasRole("ASESOR")
                         .anyExchange().denyAll())
                 .addFilterAfter(jwtFilter, SecurityWebFiltersOrder.FIRST)

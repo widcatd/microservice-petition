@@ -1,6 +1,8 @@
 package com.petition.sqs.sender;
 
+import com.petition.model.petition.PetitionResponseCalculate;
 import com.petition.model.state.gateways.SqsClient;
+import com.petition.sqs.sender.config.SQSSenderCapacityProperties;
 import com.petition.sqs.sender.config.SQSSenderProperties;
 import com.petition.model.sqs.MessageRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SQSSender implements SqsClient {
     private final SQSSenderProperties properties;
     private final SqsAsyncClient client;
+    private final SQSSenderCapacityProperties sqsSenderCapacityProperties;
     private final ObjectMapper objectMapper;
 
     public Mono<String> send(String message) {
@@ -28,9 +31,22 @@ public class SQSSender implements SqsClient {
                 .map(SendMessageResponse::messageId);
     }
 
+    public Mono<String> sendCapacity(String message) {
+        return Mono.fromCallable(() -> buildRequestCapacity(message))
+                .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
+                .doOnNext(response -> log.debug("Message sent {}", response.messageId()))
+                .map(SendMessageResponse::messageId);
+    }
+
     private SendMessageRequest buildRequest(String message) {
         return SendMessageRequest.builder()
                 .queueUrl(properties.queueUrl())
+                .messageBody(message)
+                .build();
+    }
+    private SendMessageRequest buildRequestCapacity(String message) {
+        return SendMessageRequest.builder()
+                .queueUrl(sqsSenderCapacityProperties.queueUrl())
                 .messageBody(message)
                 .build();
     }
@@ -46,5 +62,16 @@ public class SQSSender implements SqsClient {
             return Mono.empty();
         }
 
+    }
+
+    @Override
+    public Mono<String> calculateCapacity(PetitionResponseCalculate petitionResponseCalculate, String traceId) {
+        log.info("comienza a enviar el mensaje de capacidad, traceId=%d", traceId);
+        try {
+            String body = objectMapper.writeValueAsString(petitionResponseCalculate);
+            return sendCapacity(body);
+        } catch (Exception ex) {
+            return Mono.error(ex);
+        }
     }
 }
