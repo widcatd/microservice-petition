@@ -30,7 +30,9 @@ public enum ExceptionUseCaseResponse {
 
     PETITION_REGISTER_BY_ID_STATUS_NOT_FOUND("PET-001", "El registro de de solicitud no existe por el status id: %d"),
 
-    STATE_ID_NOT_FOUND("STA-001", "El id de estado es nulo");
+    STATE_ID_NOT_FOUND("STA-001", "El id de estado es nulo"),
+
+    PETITION_APPROVED_BY_EMAIL_NOT_FOUND("PET-007", "No existen solicitudes aprobadas para el email %s");
 
     private final String code;
     private final String message;

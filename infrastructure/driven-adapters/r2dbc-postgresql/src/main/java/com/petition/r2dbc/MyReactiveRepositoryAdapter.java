@@ -130,9 +130,16 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
 
     @Override
     public Flux<PetitionData> findAllPetitionByEmailAndStateAproved(String email, String traceId) {
+        log.info(Constants.LOG_REPO_START_FIND_BY_EMAIL, email, traceId);
         return repository.findApprovedPetitionsByEmail(email)
                 .flatMap(petition ->
                         loanTypeReactiveRepository.findById(petition.getIdLoanType())
+                                .switchIfEmpty(Mono.error(new RegisterNotFoundException(
+                                        ExceptionUseCaseResponse.PETITION_APPROVED_BY_EMAIL_NOT_FOUND.getCode(),
+                                        String.format(ExceptionUseCaseResponse.PETITION_APPROVED_BY_EMAIL_NOT_FOUND.getMessage(), email)
+                                )))
+                                .doOnNext(loanType ->
+                                        log.info(Constants.LOG_REPO_LOAN_TYPE_FOUND, petition.getIdLoanType(), traceId))
                                 .map(loanType -> PetitionData.builder()
                                         .idPetition(petition.getIdPetition())
                                         .mount(petition.getMount())
@@ -142,7 +149,10 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                                         .idLoanType(petition.getIdLoanType())
                                         .interestRate(loanType.getInterestRate())
                                         .build())
-                );
+                )
+                .doOnComplete(() -> log.info(Constants.LOG_REPO_FIND_COMPLETED, traceId))
+                .doOnError(error ->
+                        log.error(Constants.LOG_REPO_FIND_ERROR, error.getMessage(), traceId, error));
     }
     @Override
     public Mono<Petition> updatePetitionSQSResponse(PetitionDecisionResponse decision) {

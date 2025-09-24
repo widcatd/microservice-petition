@@ -105,11 +105,17 @@ public class Handler {
     public Mono<ServerResponse> calculateCapacity(ServerRequest serverRequest) {
         String traceId = serverRequest.headers().firstHeader("X-Trace-Id");
         String authHeader = serverRequest.headers().firstHeader(HttpHeaders.AUTHORIZATION);
+        log.info(Constants.LOG_REQUEST_RECEIVED, traceId);
+
         return serverRequest.bodyToMono(Petition.class)
                 .flatMap(petitionRequest -> petitionUseCase.calculateCapacity(petitionRequest,authHeader, traceId))
                 .flatMap(petition -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(petition)
-                );
+                )
+                .doOnSuccess(resp -> log.info(Constants.LOG_RESPONSE_SENT, resp.statusCode(), traceId))
+                .doOnError(error -> log.error(Constants.LOG_ERROR_PROCESSING, error.getMessage(), traceId, error))
+                .onErrorResume(RegisterNotFoundException.class, ex ->
+                        controllerAdvisor.handleDataAlreadyExistsException(ex, serverRequest));
     }
 }

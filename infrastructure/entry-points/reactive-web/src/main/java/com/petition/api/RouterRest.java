@@ -1,6 +1,7 @@
 package com.petition.api;
 
 import com.petition.api.dto.CreatePetitionDto;
+import com.petition.model.petition.Petition;
 import com.petition.model.petition.PetitionSearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -95,6 +96,43 @@ public class RouterRest {
                                             content = @Content(
                                                     array = @ArraySchema(schema = @Schema(implementation = PetitionSearchResponse.class))
                                             )
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "500",
+                                            description = "Error en el servidor"
+                                    )
+                            }
+                    )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/solicitud/calcular-capacidad",
+                    produces = { MediaType.APPLICATION_JSON_VALUE },
+                    method = RequestMethod.POST,
+                    beanClass = Handler.class,
+                    beanMethod = "calculateCapacity",
+                    operation = @Operation(
+                            operationId = "calculateCapacity",
+                            summary = "Calcular capacidad de pago",
+                            description = "Calcula la capacidad de pago de un solicitante en base a los datos de la petición",
+                            tags = { "Solicitudes" },
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    description = "Datos de la solicitud para calcular la capacidad",
+                                    content = @Content(
+                                            schema = @Schema(implementation = Petition.class)
+                                    )
+                            ),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Capacidad calculada correctamente",
+                                            content = @Content(
+                                                    schema = @Schema(implementation = Petition.class)
+                                            )
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400",
+                                            description = "Datos inválidos"
                                     ),
                                     @ApiResponse(
                                             responseCode = "500",

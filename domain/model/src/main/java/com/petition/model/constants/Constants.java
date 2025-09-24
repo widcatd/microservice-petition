@@ -33,6 +33,30 @@ public class Constants {
     public static final String LOG_REPO_SEARCH_COMPLETED = "Búsqueda de Petitions completada, traceId={}";
     public static final String LOG_REPO_SEARCH_ERROR = "Error en búsqueda de Petitions: {}, traceId={}";
 
+    public static final String LOG_CAPACITY_REQUEST_RECEIVED = "Solicitud de cálculo de capacidad recibida para documento={}, loanTypeId={}, traceId={}";
+    public static final String LOG_CAPACITY_CALCULATED = "Capacidad calculada correctamente para documento={}, traceId={}";
+
+    public static final String LOG_REPO_START_FIND_BY_EMAIL = "Iniciando búsqueda de solicitudes aprobadas con email={}, traceId={}";
+    public static final String LOG_REPO_FOUND_PETITION = "Solicitud aprobada encontrada con id={}, traceId={}";
+    public static final String LOG_REPO_FIND_COMPLETED = "Búsqueda de solicitudes aprobadas completada, traceId={}";
+    public static final String LOG_REPO_FIND_ERROR = "Error en búsqueda de solicitudes aprobadas: {}, traceId={}";
+
+    public static final String LOG_SEND_MESSAGE_START = "Comienza a enviar el mensaje, traceId={}";
+    public static final String LOG_SEND_MESSAGE_SUCCESS = "Mensaje enviado correctamente, traceId={}";
+    public static final String LOG_SEND_MESSAGE_ERROR = "Error enviando el mensaje: {}, traceId={}";
+
+    public static final String LOG_SEND_CAPACITY_START = "Comienza a enviar el mensaje de capacidad, traceId={}";
+    public static final String LOG_SEND_CAPACITY_SUCCESS = "Mensaje de capacidad enviado correctamente, traceId={}";
+    public static final String LOG_SEND_CAPACITY_ERROR = "Error enviando el mensaje de capacidad: {}, traceId={}";
+
+    public static final String LOG_SQS_MESSAGE_RECEIVED = "SQS mensaje recibido, messageId={}, traceId={}";
+    public static final String LOG_SQS_MESSAGE_BODY = "SQS body recibido={}, traceId={}";
+    public static final String LOG_SQS_MESSAGE_PARSED = "SQS mensaje parseado correctamente, idPetition={}, statePayment={}, traceId={}";
+    public static final String LOG_SQS_UPDATE_START = "Iniciando actualización de solicitud desde SQS, idPetition={}, traceId={}";
+    public static final String LOG_SQS_UPDATE_SUCCESS = "Actualización procesada exitosamente desde SQS, idPetition={}, traceId={}";
+    public static final String LOG_SQS_DESERIALIZATION_ERROR = "Error deserializando mensaje SQS: {}, traceId={}";
+    public static final String LOG_SQS_PROCESS_ERROR = "Error procesando mensaje desde SQS: {}, traceId={}";
+
 
 
 }

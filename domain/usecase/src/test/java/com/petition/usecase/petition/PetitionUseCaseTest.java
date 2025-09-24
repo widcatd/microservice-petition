@@ -18,7 +18,10 @@ import com.petition.model.state.gateways.AuthClient;
 import com.petition.model.state.gateways.SqsClient;
 import com.petition.model.state.gateways.StateRepository;
 import com.petition.model.webclient.User;
+import com.petition.usecase.petition.mock.PetitionDataMock;
+import com.petition.usecase.petition.mock.PetitionDecisionResponseMock;
 import com.petition.usecase.petition.mock.PetitionMock;
+import com.petition.usecase.petition.mock.UserMock;
 import com.petition.usecase.petition.validation.PetitionValidatorUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -219,6 +222,47 @@ class PetitionUseCaseTest {
 
         verify(petitionValidatorUseCase).validateUpdate(petition);
         verifyNoInteractions(petitionRepository, stateRepository, sqsClient);
+    }
+    @Test
+    @DisplayName("guarda, construye respuesta y envía a SQS correctamente")
+    void shouldCalculateCapacitySuccessfully() {
+        Petition petition = PetitionMock.validPetition();
+        petition.setEmail(EMAIL);
+
+        Petition savedPetition = PetitionMock.validPetition();
+        savedPetition.setIdPetition(1L);
+        savedPetition.setEmail(EMAIL);
+
+        when(petitionValidatorUseCase.validate(petition)).thenReturn(Mono.just(petition));
+        when(petitionRepository.savePetition(petition, TRACE_ID)).thenReturn(Mono.just(savedPetition));
+        when(loanTypeRepository.findByIdLoanType(savedPetition.getIdLoanType()))
+                .thenReturn(Mono.just(LoanTypeMock.validLoanType()));
+        when(petitionRepository.findAllPetitionByEmailAndStateAproved(savedPetition.getEmail(), TRACE_ID))
+                .thenReturn(Flux.just(PetitionDataMock.validPetitionData(EMAIL)));
+        when(authClient.findByEmail(savedPetition.getEmail(), AUTH_HEADER, TRACE_ID))
+                .thenReturn(Mono.just(UserMock.validUser(EMAIL)));
+        when(sqsClient.calculateCapacity(any(), eq(TRACE_ID))).thenReturn(Mono.just("OK"));
+
+        Mono<Petition> result = petitionUseCase.calculateCapacity(petition, AUTH_HEADER, TRACE_ID);
+
+        StepVerifier.create(result)
+                .expectNextMatches(resp -> resp.getIdPetition().equals(1L))
+                .verifyComplete();
+    }
+    @Test
+    @DisplayName("actualiza y envía mensaje SQS correctamente")
+    void shouldUpdatePetitionSQSResponseSuccessfully() {
+        var decision = PetitionDecisionResponseMock.approved(TRACE_ID);
+        var petition = PetitionMock.validPetition();
+        petition.setEmail(EMAIL);
+
+        when(petitionRepository.updatePetitionSQSResponse(decision)).thenReturn(Mono.just(petition));
+        when(loanTypeRepository.findByIdLoanType(petition.getIdLoanType()))
+                .thenReturn(Mono.just(LoanTypeMock.validLoanType()));
+        when(sqsClient.sendMessage(any(), eq(TRACE_ID))).thenReturn(Mono.just("OK"));
+
+        StepVerifier.create(petitionUseCase.updatePetitionSQSResponse(decision))
+                .verifyComplete();
     }
 
 }

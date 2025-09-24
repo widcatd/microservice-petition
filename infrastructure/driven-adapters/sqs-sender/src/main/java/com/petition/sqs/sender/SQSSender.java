@@ -1,5 +1,6 @@
 package com.petition.sqs.sender;
 
+import com.petition.model.constants.Constants;
 import com.petition.model.petition.PetitionResponseCalculate;
 import com.petition.model.state.gateways.SqsClient;
 import com.petition.sqs.sender.config.SQSSenderCapacityProperties;
@@ -27,14 +28,12 @@ public class SQSSender implements SqsClient {
     public Mono<String> send(String message) {
         return Mono.fromCallable(() -> buildRequest(message))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
-                .doOnNext(response -> log.debug("Message sent {}", response.messageId()))
                 .map(SendMessageResponse::messageId);
     }
 
     public Mono<String> sendCapacity(String message) {
         return Mono.fromCallable(() -> buildRequestCapacity(message))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
-                .doOnNext(response -> log.debug("Message sent {}", response.messageId()))
                 .map(SendMessageResponse::messageId);
     }
 
@@ -53,12 +52,15 @@ public class SQSSender implements SqsClient {
 
     @Override
     public Mono<String> sendMessage(MessageRequest messageRequest, String traceId) {
-        log.info("comienza a enviar el mensaje");
+        log.info(Constants.LOG_SEND_MESSAGE_START, traceId);
         try {
             String body = objectMapper.writeValueAsString(messageRequest);
-            return send(body);
+            return send(body)
+                    .doOnSuccess(resp -> log.info(Constants.LOG_SEND_MESSAGE_SUCCESS, traceId))
+                    .doOnError(err -> log.error(Constants.LOG_SEND_MESSAGE_ERROR, err.getMessage(), traceId, err));
         }
         catch (Exception ex){
+            log.error(Constants.LOG_SEND_MESSAGE_ERROR, ex.getMessage(), traceId, ex);
             return Mono.empty();
         }
 
@@ -66,11 +68,14 @@ public class SQSSender implements SqsClient {
 
     @Override
     public Mono<String> calculateCapacity(PetitionResponseCalculate petitionResponseCalculate, String traceId) {
-        log.info("comienza a enviar el mensaje de capacidad, traceId=%d", traceId);
+        log.info(Constants.LOG_SEND_CAPACITY_START, traceId);
         try {
             String body = objectMapper.writeValueAsString(petitionResponseCalculate);
-            return sendCapacity(body);
+            return sendCapacity(body)
+                    .doOnSuccess(resp -> log.info(Constants.LOG_SEND_CAPACITY_SUCCESS, traceId))
+                    .doOnError(err -> log.error(Constants.LOG_SEND_CAPACITY_ERROR, err.getMessage(), traceId, err));
         } catch (Exception ex) {
+            log.error(Constants.LOG_SEND_CAPACITY_ERROR, ex.getMessage(), traceId, ex);
             return Mono.error(ex);
         }
     }
